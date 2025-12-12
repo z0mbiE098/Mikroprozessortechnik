@@ -1,0 +1,391 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       *************
+    2 00000000         ;* htw saar - Fakultaet fuer Ingenieurwissenschaften    
+                       *
+    3 00000000         ;* Labor fuer Eingebettete Systeme         *
+    4 00000000         ;* Mikroprozessortechnik           *
+    5 00000000         ;*******************************************************
+                       *************
+    6 00000000         ;* Assembler_Startup.S:            *
+    7 00000000         ;* Programmrumpf fuer Assembler-Programme mit dem Keil  
+                         *
+    8 00000000         ;* Entwicklungsprogramm uVision fuer ARM-Mikrocontroller
+                          *
+    9 00000000         ;*******************************************************
+                       *************
+   10 00000000         ;* Aufgabe-Nr.:          *                      *
+   11 00000000         ;*                 *             *
+   12 00000000         ;*******************************************************
+                       *************
+   13 00000000         ;* Gruppen-Nr.:    *          *
+   14 00000000         ;*                 *          *
+   15 00000000         ;*******************************************************
+                       *************
+   16 00000000         ;* Name / Matrikel-Nr.:  *          *
+   17 00000000         ;*       *          *
+   18 00000000         ;*       *          *
+   19 00000000         ;*******************************************************
+                       *************
+   20 00000000         ;* Abgabedatum:          *                     *
+   21 00000000         ;*       *          *
+   22 00000000         ;*******************************************************
+                       *************
+   23 00000000         
+   24 00000000         ;*******************************************************
+                       *************
+   25 00000000         ;* Daten-Bereich bzw. Daten-Speicher                 *
+   26 00000000         ;*******************************************************
+                       *************
+   27 00000000                 AREA             Daten, DATA, READWRITE
+   28 00000000         Datenanfang
+   29 00000000         
+   30 00000000         
+   31 00000000         ;*******************************************************
+                       *************
+   32 00000000         ;* Programm-Bereich bzw. Programm-Speicher       *
+   33 00000000         ;*******************************************************
+                       *************
+   34 00000000                 AREA             Programm, CODE, READONLY
+   35 00000000                 ARM
+   36 00000000 E321F010 
+                       Reset_Handler
+                               MSR              CPSR_c, #0x10 ; User Mode aktiv
+                                                            ieren
+   37 00000004         ;STRING          DCB     "65535",0      ; '\0'-terminier
+                       ter String
+   38 00000004 0000001E 
+                       X       DCD              30
+   39 00000008 00000000 
+                       Y       DCD              0
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   40 0000000C         ;*******************************************************
+                       *************
+   41 0000000C         ;* Hier das eigene (Haupt-)Programm einfuegen        *
+   42 0000000C         ;*******************************************************
+                       *************
+   43 0000000C         ;LDR     R0, =STRING     ; R0 = &STRING (Adresse von Str
+                       ing wird in R0 geladen)
+   44 0000000C         ;BL      AtoI            ; AtoI wird gerufen
+   45 0000000C         
+   46 0000000C E59F009C        LDR              R0, =X
+   47 00000010 E5900000        LDR              R0, [R0]
+   48 00000014 EB00001B        BL               Formel
+   49 00000018         ;*******************************************************
+                       *************
+   50 00000018         ;* Ende des eigenen (Haupt-)Programms                   
+                                   *
+   51 00000018         ;*******************************************************
+                       *************
+   52 00000018 EAFFFFFE 
+                       endlos  B                endlos
+   53 0000001C         
+   54 0000001C         ;*******************************************************
+                       *************
+   55 0000001C         ;* ab hier Unterprogramme                               
+                                   *
+   56 0000001C         ;*******************************************************
+                       *************
+   57 0000001C 00000030 
+                       CHAR_0  EQU              0x30        ; '0'
+   58 0000001C         
+   59 0000001C         AtoI
+   60 0000001C E3A02000        MOV              R2, #0      ; Hier wird Result 
+                                                            gespeichert
+   61 00000020 E3A03000        MOV              R3, #0      ; Vorzeichen Flag. 
+                                                            0 = positiv, 1 = ne
+                                                            gative
+   62 00000024 E5D01000        LDRB             R1, [R0]    ; erstes Zeichen wi
+                                                            rd geholt
+   63 00000028 E351002B        CMP              R1, #0x2B   ; Überprüfen, ob er
+                                                            stes Zeichen positi
+                                                            v ist
+   64 0000002C 0A000002        BEQ              AtoI_SkipPlus
+   65 00000030         
+   66 00000030 E351002D        CMP              R1, #0x2D   ; Überprüfen ob ers
+                                                            tes Zeichen negativ
+                                                             ist
+   67 00000034 0A000002        BEQ              AtoI_SetMinus
+   68 00000038         
+   69 00000038 EA000004        B                AtoI_Loop   ; sonst direkt in d
+                                                            ie Schleife mit dem
+                                                             aktuellen Zeichen
+   70 0000003C         
+   71 0000003C         AtoI_SkipPlus
+   72 0000003C E2800001        ADD              R0, R0, #1  ; zum nächsten Zeic
+                                                            hen
+   73 00000040 EA000002        B                AtoI_Loop
+   74 00000044         
+   75 00000044         AtoI_SetMinus
+   76 00000044 E3A03001        MOV              R3, #1      ; Negatives Vorzeic
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+                                                            hen wird gemerkt
+   77 00000048 E2800001        ADD              R0, R0, #1
+   78 0000004C EAFFFFFF        B                AtoI_Loop
+   79 00000050         
+   80 00000050         AtoI_Loop
+   81 00000050 E5D01000        LDRB             R1, [R0]    ; aktuelles Zeichen
+                                                            
+   82 00000054 E3510000        CMP              R1, #0      ; Überprüfen,R ob w
+                                                            ir Ende vom String 
+                                                            erreicht haben.
+   83 00000058 0A000005        BEQ              AtoI_EndDigits ; ja -> fertig
+   84 0000005C         
+   85 0000005C         ; ASCII-Zeichen in Ziffer 0..9 umwandeln: digit = char -
+                        '0'
+   86 0000005C E2411030        SUB              R1, R1, #CHAR_0
+   87 00000060         
+   88 00000060         
+   89 00000060         ; 10 = 8 + 2 -> result*10 = (result<<3) + (result<<1)
+   90 00000060 E1A04182        MOV              R4, R2, LSL #3 ; R4 = result*8
+   91 00000064 E0844082        ADD              R4, R4, R2, LSL #1 ; R4 = resul
+                                                            t*8 + result*2 = re
+                                                            sult*10
+   92 00000068 E0842001        ADD              R2, R4, R1  ; result = result*1
+                                                            0 + digit
+   93 0000006C         
+   94 0000006C         ; n?chstes Zeichen
+   95 0000006C E2800001        ADD              R0, R0, #1
+   96 00000070 EAFFFFF6        B                AtoI_Loop
+   97 00000074         
+   98 00000074         AtoI_EndDigits
+   99 00000074 E3530000        CMP              R3, #0
+  100 00000078 0A000000        BEQ              AtoI_Positive
+  101 0000007C         
+  102 0000007C         ; negativ: result = -result
+  103 0000007C E2622000        RSB              R2, R2, #0  ; R2 = 0 - result
+  104 00000080         
+  105 00000080         AtoI_Positive
+  106 00000080 E1A00002        MOV              R0, R2      ; R?ckgabewert in R
+                                                            0
+  107 00000084 E12FFF1E        BX               LR          ; zur?ck zum Aufruf
+                                                            er
+  108 00000088         
+  109 00000088         
+  110 00000088         Formel
+  111 00000088 E1A01000        MOV              R1, R0
+  112 0000008C         
+  113 0000008C E0020191        MUL              R2, R1, R1
+  114 00000090 E3A03000        MOV              R3, #0
+  115 00000094         
+  116 00000094         DivideLoop
+  117 00000094 E3520009        CMP              R2, #9
+  118 00000098 BA000002        BLT              DivDone
+  119 0000009C         
+  120 0000009C E2422009        SUB              R2, R2, #9
+  121 000000A0 E2833001        ADD              R3, R3, #1
+  122 000000A4 EAFFFFFA        B                DivideLoop
+  123 000000A8         
+  124 000000A8         DivDone
+  125 000000A8 E1A00103        MOV              R0, R3, LSL #2
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  126 000000AC E12FFF1E        BX               LR
+  127 000000B0         
+  128 000000B0         
+  129 000000B0         ;*******************************************************
+                       *************
+  130 000000B0         ;* Konstanten im CODE-Bereich                           
+                                   *
+  131 000000B0         ;*******************************************************
+                       *************
+  132 000000B0         
+  133 000000B0         
+  134 000000B0         ;*******************************************************
+                       *************
+  135 000000B0         ;* Ende der Programm-Quelle                             
+                                   *
+  136 000000B0         ;*******************************************************
+                       *************
+  137 000000B0                 END
+              00000000 
+Command Line: --debug --xref --depend=.\assembler_startup.d -o.\assembler_start
+up.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM\Inc\Phili
+ps --predefine="__EVAL SETA 1" --list=.\assembler_startup.lst Assembler_Startup
+.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Daten 00000000
+
+Symbol: Daten
+   Definitions
+      At line 27 in file Assembler_Startup.s
+   Uses
+      None
+Comment: Daten unused
+Datenanfang 00000000
+
+Symbol: Datenanfang
+   Definitions
+      At line 28 in file Assembler_Startup.s
+   Uses
+      None
+Comment: Datenanfang unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+AtoI 0000001C
+
+Symbol: AtoI
+   Definitions
+      At line 59 in file Assembler_Startup.s
+   Uses
+      None
+Comment: AtoI unused
+AtoI_EndDigits 00000074
+
+Symbol: AtoI_EndDigits
+   Definitions
+      At line 98 in file Assembler_Startup.s
+   Uses
+      At line 83 in file Assembler_Startup.s
+Comment: AtoI_EndDigits used once
+AtoI_Loop 00000050
+
+Symbol: AtoI_Loop
+   Definitions
+      At line 80 in file Assembler_Startup.s
+   Uses
+      At line 69 in file Assembler_Startup.s
+      At line 73 in file Assembler_Startup.s
+      At line 78 in file Assembler_Startup.s
+      At line 96 in file Assembler_Startup.s
+
+AtoI_Positive 00000080
+
+Symbol: AtoI_Positive
+   Definitions
+      At line 105 in file Assembler_Startup.s
+   Uses
+      At line 100 in file Assembler_Startup.s
+Comment: AtoI_Positive used once
+AtoI_SetMinus 00000044
+
+Symbol: AtoI_SetMinus
+   Definitions
+      At line 75 in file Assembler_Startup.s
+   Uses
+      At line 67 in file Assembler_Startup.s
+Comment: AtoI_SetMinus used once
+AtoI_SkipPlus 0000003C
+
+Symbol: AtoI_SkipPlus
+   Definitions
+      At line 71 in file Assembler_Startup.s
+   Uses
+      At line 64 in file Assembler_Startup.s
+Comment: AtoI_SkipPlus used once
+DivDone 000000A8
+
+Symbol: DivDone
+   Definitions
+      At line 124 in file Assembler_Startup.s
+   Uses
+      At line 118 in file Assembler_Startup.s
+Comment: DivDone used once
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+DivideLoop 00000094
+
+Symbol: DivideLoop
+   Definitions
+      At line 116 in file Assembler_Startup.s
+   Uses
+      At line 122 in file Assembler_Startup.s
+Comment: DivideLoop used once
+Formel 00000088
+
+Symbol: Formel
+   Definitions
+      At line 110 in file Assembler_Startup.s
+   Uses
+      At line 48 in file Assembler_Startup.s
+Comment: Formel used once
+Programm 00000000
+
+Symbol: Programm
+   Definitions
+      At line 34 in file Assembler_Startup.s
+   Uses
+      None
+Comment: Programm unused
+Reset_Handler 00000000
+
+Symbol: Reset_Handler
+   Definitions
+      At line 36 in file Assembler_Startup.s
+   Uses
+      None
+Comment: Reset_Handler unused
+X 00000004
+
+Symbol: X
+   Definitions
+      At line 38 in file Assembler_Startup.s
+   Uses
+      At line 46 in file Assembler_Startup.s
+Comment: X used once
+Y 00000008
+
+Symbol: Y
+   Definitions
+      At line 39 in file Assembler_Startup.s
+   Uses
+      None
+Comment: Y unused
+endlos 00000018
+
+Symbol: endlos
+   Definitions
+      At line 52 in file Assembler_Startup.s
+   Uses
+      At line 52 in file Assembler_Startup.s
+Comment: endlos used once
+14 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+CHAR_0 00000030
+
+Symbol: CHAR_0
+   Definitions
+      At line 57 in file Assembler_Startup.s
+   Uses
+      At line 86 in file Assembler_Startup.s
+Comment: CHAR_0 used once
+1 symbol
+350 symbols in table
