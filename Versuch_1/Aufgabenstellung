@@ -1,0 +1,15 @@
+2.1 Funktion AtoI (= Ascii to signed Integer)
+Im Datenspeicher steht ein String (mit Endezeichen "\0"), der eine ASCII-codierte, ganze Dezimalzahl
+(-231 ≤ Zahl ≤ +231-1) beinhaltet. Schreiben Sie ein Unterprogramm "AtoI", das
+- beim Aufruf im Register R0 die Adresse des ersten Zeichens des Strings enthält und
+- nach Beendigung des Unterprogramms steht im Register R0 die konvertierte 32-Bit-Zahl im
+Datenformat „signed integer“.
+1. Beispiel:
+STRING DCB „65535“, 0x00 entspricht 36H, 35H, 35H, 33H, 35H, 00H
+bzw.
+STRING DCB „+65535“, 0x00 entspricht 2BH, 36H, 35H, 35H, 33H, 35H, 00H
+→ liefert die Zahl +65535D = 0000FFFFH
+2. Beispiel:
+STRING DCB „-65535“, 0x00 entspricht 2DH, 36H, 35H, 35H, 33H, 35H, 00H
+→ liefert die Zahl -65535D = FFFF0001H
+Testen Sie Ihr Unterprogramm mit einem entsprechenden Hauptprogramm.
