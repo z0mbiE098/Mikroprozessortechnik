@@ -45,21 +45,24 @@ Reset_Handler	MSR			CPSR_c, #0x10	; User Mode
 ;* Hier das eigene (Haupt-)Programm einfuegen   					*
 ;********************************************************************
 				
-				LDR R0, =String
-				BL AtoI
+				LDR R0, =String             ;
+				BL Berechnung   			;
 				
-				LDR R0, =X
-				LDR R0, [R0]
-				BL Formel
+				;LDR R0, =String
+				;BL AtoI
 				
-				LDR R0, =Number
-				LDR R0, [R0]
-				BL uItoBCD
+				;LDR R0, =X
+				;LDR R0, [R0]
+				;BL Formel
+				
+				;LDR R0, =Number
+				;LDR R0, [R0]
+				;BL uItoBCD
 ;********************************************************************
 ;* Ende des eigenen (Haupt-)Programms                               *
 ;********************************************************************
 
-endlos			B			endlos
+endlos	B					endlos	;
 
 ;********************************************************************
 ;* ab hier Unterprogramme                                           *
@@ -155,7 +158,7 @@ uItoBCD_END
 				MOV R5, R3, LSL R2
 				ORR R1, R1, R5
 				ADD R2, R2, #4
-				MOV R0, R3
+				MOV R0, R4   ; -----------
 				B uItoBCD_Loop
 				
 uItoBCD_Done
@@ -163,14 +166,33 @@ uItoBCD_Done
 				POP{R1, R2, R3, R4, R5, LR}
 				BX LR
 				
+;------------------------Aufgabe 4-----------------------------------
+
+; R0 (in)  = Adresse des Strings mit X (ASCII, evtl. mit + / -)
+; R0 (out) = Y als gepackte BCD-Zahl
+; Ablauf:
+;   AtoI   : String -> X (signed int)
+;   Formel : X -> Y  (signed int)
+;   uItoBCD: Y -> BCD(Y)
+Berechnung
+                PUSH {LR}         ; eigenen Rücksprung sichern
+
+                ;R0 = &String_X
+                BL AtoI           ; R0 = X (signed Integer)
+                BL Formel         ; R0 = Y = 4*X^2/9
+                BL uItoBCD        ; R0 = Y als BCD
+
+                POP {LR}
+                BX LR
+				
 ;********************************************************************
 ;* Konstanten im CODE-Bereich                                       *
 ;********************************************************************
 
-String DCB "65535",0
+String DCB "100",0
 CHAR_0 EQU 0x30
 		ALIGN
-X DCD 30
+X DCD 100
 Number DCD 3035 
 
 ;********************************************************************
