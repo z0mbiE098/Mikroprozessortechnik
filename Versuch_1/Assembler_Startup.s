@@ -26,144 +26,153 @@
 ;********************************************************************
 				AREA		Daten, DATA, READWRITE
 Datenanfang
+					
+RAM_Size      	EQU      	0x400     		; 1024 Byte Stack-Größe
+
+Top_Stack       EQU      	Datenanfang+RAM_Size
+Datenende       EQU      	Top_Stack
+
 ;********************************************************************
 ;* Programm-Bereich bzw. Programm-Speicher							*
 ;********************************************************************
+				
 				AREA		Programm, CODE, READONLY
 				ARM
-Reset_Handler	MSR			CPSR_c, #0x10	; User Mode aktivieren
-
+Reset_Handler	MSR			CPSR_c, #0x10	; User Mode
+				LDR SP, =Top_Stack
 
 ;********************************************************************
 ;* Hier das eigene (Haupt-)Programm einfuegen   					*
 ;********************************************************************
-                ;LDR     R0, =STRING     ; R0 = &STRING (Adresse von String wird in R0 geladen)
-                ;BL      AtoI            ; AtoI wird gerufen
-			
-				LDR 	R0, =NUMBER	;Replace String mit X for Aufgabe_2
-				;LDR 	R0, [R0]		;Zeile für Aufgabe 2
-				LDR 	R0, [R0]		;Zeile für Aufgabe 3
-				BL uItoBCD					; Funktion Aufrufen
+				
+				LDR R0, =String
+				BL AtoI
+				
+				LDR R0, =X
+				LDR R0, [R0]
+				BL Formel
+				
+				LDR R0, =Number
+				LDR R0, [R0]
+				BL uItoBCD
 ;********************************************************************
 ;* Ende des eigenen (Haupt-)Programms                               *
 ;********************************************************************
+
 endlos			B			endlos
 
 ;********************************************************************
 ;* ab hier Unterprogramme                                           *
 ;********************************************************************
-CHAR_0      EQU     0x30    ; '0'
+
 
 ;------------------------Aufgabe 1-----------------------------------
 AtoI
-                MOV     R2, #0          ; Hier wird Result gespeichert
-                MOV     R3, #0          ; Vorzeichen Flag. 0 = positiv, 1 = negative
-                LDRB    R1, [R0]        ; erstes Zeichen wird geholt
-                CMP     R1, #0x2B		; Überprüfen, ob erstes Zeichen positiv ist
-                BEQ     AtoI_SkipPlus
-
-                CMP     R1, #0x2D		; Überprüfen ob erstes Zeichen negativ ist
-                BEQ     AtoI_SetMinus
+				PUSH {R1, R2, R3, R4, R5, LR}
+				MOV R2, #0
+				MOV R3, #0
+				LDRB R1, [R0]
 				
-                B       AtoI_Loop  		; sonst direkt in die Schleife mit dem aktuellen Zeichen
-
-AtoI_SkipPlus
-                ADD     R0, R0, #1      ; zum nächsten Zeichen
-                B       AtoI_Loop
-
-AtoI_SetMinus
-                MOV     R3, #1          ; Negatives Vorzeichen wird gemerkt
-                ADD     R0, R0, #1
-                B       AtoI_Loop
+				CMP R1, #0x2B
+				BEQ Skip_first_positive
 				
-AtoI_Loop
-                LDRB    R1, [R0]        ; aktuelles Zeichen
-                CMP     R1, #0          ; Überprüfen,R ob wir Ende vom String erreicht haben.
-                BEQ     AtoI_EndDigits  ; ja -> fertig
+				CMP R1, #0x2D
+				BEQ Set_Minus
+				B AtoI_Loop
 
-                ; ASCII-Zeichen in Ziffer 0..9 umwandeln: digit = char - '0'
-                SUB     R1, R1, #CHAR_0
-
-           
-                ; 10 = 8 + 2 -> result*10 = (result<<3) + (result<<1)
-                MOV     R4, R2, LSL #3              ; R4 = result*8
-                ADD     R4, R4, R2, LSL #1          ; R4 = result*8 + result*2 = result*10
-                ADD     R2, R4, R1                  ; result = result*10 + digit
-
-                ; n?chstes Zeichen
-                ADD     R0, R0, #1
-                B       AtoI_Loop
+Skip_first_positive
+				ADD R0, R0, #1
+				B AtoI_Loop
 				
+Set_Minus
+				MOV R3, #1
+				ADD R0, R0, #1
+
+AtoI_Loop		
+				LDRB R1, [R0]
+				CMP R1, #0
+				BEQ AtoI_EndDigits
+				
+				SUB R1, R1, #CHAR_0
+				MOV R4, R2, LSL #3
+				ADD R4, R4, R2, LSL#1
+				ADD R2, R4, R1
+				
+				ADD R0, R0, #1
+				B AtoI_Loop
 AtoI_EndDigits
-                CMP     R3, #0
-                BEQ     AtoI_Positive
-
-                ; negativ: result = -result
-                RSB     R2, R2, #0      ; R2 = 0 - result
-
+				CMP R3, #0
+				BEQ AtoI_Positive
+				RSB R2, R2, #0
+				
 AtoI_Positive
-                MOV     R0, R2          ; R?ckgabewert in R0
-                BX      LR              ; zur?ck zum Aufrufer
-
+				MOV R0, R2
+				POP {R1, R2, R3, R4, R5, LR}
+				BX LR
 
 ;------------------------Aufgabe 2-----------------------------------
+
 Formel
+				PUSH {R1, R2, R3, R4, LR}
 				MOV R1, R0
-				
 				MUL R2, R1, R1
 				MOV R3, #0
-
-DivideLoop
+				
+Division_Loop
 				CMP R2, #9
-				BLT DivDone
+				BLT Division_Done
 				
 				SUB R2, R2, #9
 				ADD R3, R3, #1
-				B DivideLoop
+				B Division_Loop
 				
-DivDone
+Division_Done
 				MOV R0, R3, LSL #2
+				POP{R1, R2, R3, R4, LR}
 				BX LR
+	
 ;------------------------Aufgabe 3-----------------------------------
 
 uItoBCD
-				MOV R1, #0				; Ergebnis wird hier gespeichert 
-				MOV R2, #0				; R2 = Shiftzähler
-
+				PUSH {R1, R2, R3, R4, R5, LR}
+				MOV R1, #0
+				MOV R2, #0
+				
 uItoBCD_Loop
 				CMP R0, #0
 				BEQ uItoBCD_Done
-				
 				MOV R3, R0
 				MOV R4, #0
-				
-Division_10
+
+uItoBCD_Division_Loop
 				CMP R3, #10
-				BLT Division_END
+				BLT uItoBCD_END
 				SUB R3, R3, #10
 				ADD R4, R4, #1
-				B Division_10
+				B uItoBCD_Division_Loop
 				
-Division_END				
+uItoBCD_END
 				MOV R5, R3, LSL R2
 				ORR R1, R1, R5
 				ADD R2, R2, #4
-				MOV R0, R4
+				MOV R0, R3
 				B uItoBCD_Loop
 				
-
 uItoBCD_Done
 				MOV R0, R1
+				POP{R1, R2, R3, R4, R5, LR}
 				BX LR
-
-;------------------------Aufgabe 4-----------------------------------
-                
+				
 ;********************************************************************
 ;* Konstanten im CODE-Bereich                                       *
 ;********************************************************************
-X 				DCD 30
-STRING          DCB     "-65535",0      ; '\0'-terminierter String
-NUMBER 			DCD		65535
+
+String DCB "65535",0
+CHAR_0 EQU 0x30
+		ALIGN
+X DCD 30
+Number DCD 3035 
+
 ;********************************************************************
 ;* Ende der Programm-Quelle                                         *
 ;********************************************************************
