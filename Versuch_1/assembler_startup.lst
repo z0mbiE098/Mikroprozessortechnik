@@ -74,7 +74,7 @@ ARM Macro Assembler    Page 2
    41 00000000 E321F010 
                        Reset_Handler
                                MSR              CPSR_c, #0x10 ; User Mode
-   42 00000004 E59FD134        LDR              SP, =Top_Stack
+   42 00000004 E59FD180        LDR              SP, =Top_Stack
    43 00000008         
    44 00000008         ;*******************************************************
                        *************
@@ -82,7 +82,7 @@ ARM Macro Assembler    Page 2
    46 00000008         ;*******************************************************
                        *************
    47 00000008         
-   48 00000008 E59F0134        LDR              R0, =String ;
+   48 00000008 E59F0180        LDR              R0, =String ;
    49 0000000C EB00003C        BL               Berechnung  ;
    50 00000010         
    51 00000010         ;LDR R0, =String
@@ -243,7 +243,7 @@ ARM Macro Assembler    Page 4
   181 00000108 EBFFFFC1        BL               AtoI        ; R0 = X (signed In
                                                             teger)
   182 0000010C EB000002        BL               Formel_2    ; R0 = Y = 4*X^2/9
-  183 00000110 EBFFFFE7        BL               uItoBCD     ; R0 = Y als BCD
+  183 00000110 EB000007        BL               uItoBCD_2   ; R0 = Y als BCD
   184 00000114         
   185 00000114 E49DE004        POP              {LR}
   186 00000118 E12FFF1E        BX               LR
@@ -252,7 +252,7 @@ ARM Macro Assembler    Page 4
                        rs-----------
   189 0000011C         
   190 0000011C         Formel_2
-  191 0000011C E59F1024        LDR              R1, =DIV_9
+  191 0000011C E59F1070        LDR              R1, =DIV_9
   192 00000120 E0020090        MUL              R2, R0, R0  ; X^2 in R2 abgespe
                                                             ichert
   193 00000124 E0843192        UMULL            R3, R4, R2, R1 ; x^2 wird mit M
@@ -283,37 +283,82 @@ ARM Macro Assembler    Page 5
                                                             chert
   196 00000130 E12FFF1E        BX               LR
   197 00000134         
-  198 00000134         ;*******************************************************
+  198 00000134         
+  199 00000134         ;------------------------Aufgabe 3 mit magic numbers----
+                       -------------
+  200 00000134         
+  201 00000134         uItoBCD_2
+  202 00000134 E92D41FE        PUSH             {R1-R8, LR}
+  203 00000138 E3A01000        MOV              R1, #0      ; BCD-Ergebnis
+  204 0000013C E3A02000        MOV              R2, #0      ; shift = 0
+  205 00000140 E59F5050        LDR              R5, =DIV_10
+  206 00000144 E3A0600A        MOV              R6, #10
+  207 00000148         
+  208 00000148         uItoBCD_Loop_2
+  209 00000148 E3500000        CMP              R0, #0
+  210 0000014C 0A000008        BEQ              uItoBCD_Done_2
+  211 00000150         
+  212 00000150         
+  213 00000150 E0873590        UMULL            R3, R7, R0, R5 ; 
+  214 00000154 E1A031A7        MOV              R3, R7, LSR#3 ; q = R0 / 10
+  215 00000158         
+  216 00000158         
+  217 00000158 E0040693        MUL              R4, R3, R6  ; R4 = q * 10
+  218 0000015C E0404004        SUB              R4, R0, R4  ; r = R0 - q * 10 ,
+                                                             sprich modulo
+  219 00000160         
+  220 00000160 E1A08214        MOV              R8, R4, LSL R2
+  221 00000164 E0811008        ADD              R1, R1, R8
+  222 00000168         
+  223 00000168         
+  224 00000168 E1A00003        MOV              R0, R3
+  225 0000016C E2822004        ADD              R2, R2, #4
+  226 00000170         
+  227 00000170 EAFFFFF4        B                uItoBCD_Loop_2
+  228 00000174         
+  229 00000174         uItoBCD_Done_2
+  230 00000174 E1A00001        MOV              R0, R1      ; Rückgabe: BCD
+  231 00000178 E8BD41FE        POP              {R1-R8, LR}
+  232 0000017C E12FFF1E        BX               LR
+  233 00000180         
+  234 00000180         ;*******************************************************
                        *************
-  199 00000134         ;* Konstanten im CODE-Bereich                           
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  235 00000180         ;* Konstanten im CODE-Bereich                           
                                    *
-  200 00000134         ;*******************************************************
+  236 00000180         ;*******************************************************
                        *************
-  201 00000134         
-  202 00000134 31 30 30 
+  237 00000180         
+  238 00000180 31 30 30 
               00       String  DCB              "100",0
-  203 00000138 00000030 
+  239 00000184 00000030 
                        CHAR_0  EQU              0x30
-  204 00000138                 ALIGN
-  205 00000138 00000064 
+  240 00000184                 ALIGN
+  241 00000184 00000064 
                        X       DCD              100
-  206 0000013C 00000BDB 
+  242 00000188 00000BDB 
                        Number  DCD              3035
-  207 00000140 38E38E39 
+  243 0000018C 38E38E39 
                        DIV_9   EQU              0x38E38E39  ; mit n=1
-  208 00000140 CCCCCCCD 
+  244 0000018C CCCCCCCD 
                        DIV_10  EQU              0xCCCCCCCD  ; mit n=3
-  209 00000140         
-  210 00000140         ;*******************************************************
+  245 0000018C         
+  246 0000018C         ;*******************************************************
                        *************
-  211 00000140         ;* Ende der Programm-Quelle                             
+  247 0000018C         ;* Ende der Programm-Quelle                             
                                    *
-  212 00000140         ;*******************************************************
+  248 0000018C         ;*******************************************************
                        *************
-  213 00000140                 END
+  249 0000018C                 END
               00000000 
               00000000 
               38E38E39 
+              CCCCCCCD 
 Command Line: --debug --xref --depend=.\assembler_startup.d -o.\assembler_start
 up.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM\Inc\Phili
 ps --predefine="__EVAL SETA 1" --list=.\assembler_startup.lst Assembler_Startup
@@ -444,11 +489,11 @@ Symbol: Formel_2
    Uses
       At line 182 in file Assembler_Startup.s
 Comment: Formel_2 used once
-Number 0000013C
+Number 00000188
 
 Symbol: Number
    Definitions
-      At line 206 in file Assembler_Startup.s
+      At line 242 in file Assembler_Startup.s
    Uses
       None
 Comment: Number unused
@@ -484,7 +529,7 @@ Symbol: Skip_first_positive
    Uses
       At line 80 in file Assembler_Startup.s
 Comment: Skip_first_positive used once
-String 00000134
+String 00000180
 
 Symbol: String
    Definitions
@@ -494,15 +539,15 @@ Symbol: String
 ARM Macro Assembler    Page 3 Alphabetic symbol ordering
 Relocatable symbols
 
-      At line 202 in file Assembler_Startup.s
+      At line 238 in file Assembler_Startup.s
    Uses
       At line 48 in file Assembler_Startup.s
 Comment: String used once
-X 00000138
+X 00000184
 
 Symbol: X
    Definitions
-      At line 205 in file Assembler_Startup.s
+      At line 241 in file Assembler_Startup.s
    Uses
       None
 Comment: X unused
@@ -520,8 +565,16 @@ Symbol: uItoBCD
    Definitions
       At line 139 in file Assembler_Startup.s
    Uses
+      None
+Comment: uItoBCD unused
+uItoBCD_2 00000134
+
+Symbol: uItoBCD_2
+   Definitions
+      At line 201 in file Assembler_Startup.s
+   Uses
       At line 183 in file Assembler_Startup.s
-Comment: uItoBCD used once
+Comment: uItoBCD_2 used once
 uItoBCD_Division_Loop 000000D0
 
 Symbol: uItoBCD_Division_Loop
@@ -538,6 +591,20 @@ Symbol: uItoBCD_Done
    Uses
       At line 146 in file Assembler_Startup.s
 Comment: uItoBCD_Done used once
+uItoBCD_Done_2 00000174
+
+Symbol: uItoBCD_Done_2
+   Definitions
+      At line 229 in file Assembler_Startup.s
+   Uses
+      At line 210 in file Assembler_Startup.s
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: uItoBCD_Done_2 used once
 uItoBCD_END 000000E4
 
 Symbol: uItoBCD_END
@@ -553,14 +620,16 @@ Symbol: uItoBCD_Loop
       At line 144 in file Assembler_Startup.s
    Uses
       At line 162 in file Assembler_Startup.s
-
-
-
-ARM Macro Assembler    Page 4 Alphabetic symbol ordering
-Relocatable symbols
-
 Comment: uItoBCD_Loop used once
-22 symbols
+uItoBCD_Loop_2 00000148
+
+Symbol: uItoBCD_Loop_2
+   Definitions
+      At line 208 in file Assembler_Startup.s
+   Uses
+      At line 227 in file Assembler_Startup.s
+Comment: uItoBCD_Loop_2 used once
+25 symbols
 
 
 
@@ -571,7 +640,7 @@ CHAR_0 00000030
 
 Symbol: CHAR_0
    Definitions
-      At line 203 in file Assembler_Startup.s
+      At line 239 in file Assembler_Startup.s
    Uses
       At line 99 in file Assembler_Startup.s
 Comment: CHAR_0 used once
@@ -579,15 +648,15 @@ DIV_10 CCCCCCCD
 
 Symbol: DIV_10
    Definitions
-      At line 208 in file Assembler_Startup.s
+      At line 244 in file Assembler_Startup.s
    Uses
-      None
-Comment: DIV_10 unused
+      At line 205 in file Assembler_Startup.s
+Comment: DIV_10 used once
 DIV_9 38E38E39
 
 Symbol: DIV_9
    Definitions
-      At line 207 in file Assembler_Startup.s
+      At line 243 in file Assembler_Startup.s
    Uses
       At line 191 in file Assembler_Startup.s
 Comment: DIV_9 used once
@@ -600,4 +669,4 @@ Symbol: RAM_Size
       At line 32 in file Assembler_Startup.s
 Comment: RAM_Size used once
 4 symbols
-363 symbols in table
+366 symbols in table

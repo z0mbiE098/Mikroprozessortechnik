@@ -180,7 +180,7 @@ Berechnung
                 ;R0 = &String_X
                 BL AtoI           ; R0 = X (signed Integer)
                 BL Formel_2         ; R0 = Y = 4*X^2/9
-                BL uItoBCD        ; R0 = Y als BCD
+                BL uItoBCD_2        ; R0 = Y als BCD
 
                 POP {LR}
                 BX LR
@@ -194,6 +194,50 @@ Formel_2
 				MOV        R3, R4, LSR #1    ; Rechts-Shift um n = 1, s. Skript S. 96 Tabelle 18, damit Ergebnis nicht mehr als LONG vorliegt, herunterskalieren durch Rechts-Shift nach mul mit MagicNumber -> LSR #1 == * 2^-n
 				MOV        R0, R3, LSL #2    ; Term wird mit 2^2 = 4 multipliziert und in R0 gespeichert
 				BX		LR
+				
+
+;------------------------Aufgabe 3 mit magic numbers-----------------
+
+; anhand dieses Formel (Pseudocode): while (dec)
+;    {
+;        result +=  (dec % 10) << shift;
+;        dec = dec / 10;
+;        shift += 4;
+;    }
+;    return result;
+
+uItoBCD_2
+        PUSH {R1-R8, LR}
+        MOV  R1, #0          ; BCD-Ergebnis
+        MOV  R2, #0          ; shift = 0
+		LDR  R5, =DIV_10
+		MOV  R6, #10
+
+uItoBCD_Loop_2
+        CMP  R0, #0
+        BEQ  uItoBCD_Done_2
+
+        
+        UMULL R3, R7, R0, R5                    
+        MOV R3, R7, LSR#3  		; q = R0 / 10
+	
+		
+        MUL R4, R3, R6		; R4 = q * 10
+		SUB R4, R0, R4       ; r = R0 - q * 10 , sprich modulo
+		
+		MOV R8, R4, LSL R2   ; R8 = (R0 % 10) << shift R2
+		ADD R1, R1, R8       ; result += R8
+	
+		
+		MOV R0, R3           ; R0 = R0/10 --> nächste iteration
+		ADD R2, R2, #4       ; bei jeder iteration wird einmla mehr um 4 geshiftet
+
+		B    uItoBCD_Loop_2
+
+uItoBCD_Done_2
+        MOV  R0, R1          ; Rückgabe: BCD
+        POP  {R1-R8, LR}
+        BX   LR
 				
 ;********************************************************************
 ;* Konstanten im CODE-Bereich                                       *
