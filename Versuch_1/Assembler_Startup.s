@@ -179,11 +179,21 @@ Berechnung
 
                 ;R0 = &String_X
                 BL AtoI           ; R0 = X (signed Integer)
-                BL Formel         ; R0 = Y = 4*X^2/9
+                BL Formel_2         ; R0 = Y = 4*X^2/9
                 BL uItoBCD        ; R0 = Y als BCD
 
                 POP {LR}
                 BX LR
+				
+;------------------------------Aufgabe 2 mit magic numbers-----------
+
+Formel_2
+				LDR        R1, =DIV_9		
+				MUL        R2, R0, R0        ; X^2 in R2 abgespeichert
+				UMULL      R3, R4, R2, R1    ; x^2 wird mit MagicNumber multipliziert, UMULL anstelle von SMULL, da R2 immer positiv ist, da R2 = R0^2 
+				MOV        R3, R4, LSR #1    ; Rechts-Shift um n = 1, s. Skript S. 96 Tabelle 18, damit Ergebnis nicht mehr als LONG vorliegt, herunterskalieren durch Rechts-Shift nach mul mit MagicNumber -> LSR #1 == * 2^-n
+				MOV        R0, R3, LSL #2    ; Term wird mit 2^2 = 4 multipliziert und in R0 gespeichert
+				BX		LR
 				
 ;********************************************************************
 ;* Konstanten im CODE-Bereich                                       *
@@ -194,6 +204,8 @@ CHAR_0 EQU 0x30
 		ALIGN
 X DCD 100
 Number DCD 3035 
+DIV_9            EQU            0x38E38E39     ; mit n=1
+DIV_10            EQU            0xCCCCCCCD    ; mit n=3
 
 ;********************************************************************
 ;* Ende der Programm-Quelle                                         *

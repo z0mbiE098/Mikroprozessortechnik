@@ -74,7 +74,7 @@ ARM Macro Assembler    Page 2
    41 00000000 E321F010 
                        Reset_Handler
                                MSR              CPSR_c, #0x10 ; User Mode
-   42 00000004 E59FD11C        LDR              SP, =Top_Stack
+   42 00000004 E59FD134        LDR              SP, =Top_Stack
    43 00000008         
    44 00000008         ;*******************************************************
                        *************
@@ -82,7 +82,7 @@ ARM Macro Assembler    Page 2
    46 00000008         ;*******************************************************
                        *************
    47 00000008         
-   48 00000008 E59F011C        LDR              R0, =String ;
+   48 00000008 E59F0134        LDR              R0, =String ;
    49 0000000C EB00003C        BL               Berechnung  ;
    50 00000010         
    51 00000010         ;LDR R0, =String
@@ -242,44 +242,78 @@ ARM Macro Assembler    Page 4
   180 00000108         ;R0 = &String_X
   181 00000108 EBFFFFC1        BL               AtoI        ; R0 = X (signed In
                                                             teger)
-  182 0000010C EBFFFFDC        BL               Formel      ; R0 = Y = 4*X^2/9
+  182 0000010C EB000002        BL               Formel_2    ; R0 = Y = 4*X^2/9
   183 00000110 EBFFFFE7        BL               uItoBCD     ; R0 = Y als BCD
   184 00000114         
   185 00000114 E49DE004        POP              {LR}
   186 00000118 E12FFF1E        BX               LR
   187 0000011C         
-  188 0000011C         ;*******************************************************
-                       *************
-  189 0000011C         ;* Konstanten im CODE-Bereich                           
-                                   *
-  190 0000011C         ;*******************************************************
-                       *************
-  191 0000011C         
-  192 0000011C 31 30 30 
-              00       String  DCB              "100",0
-  193 00000120 00000030 
+  188 0000011C         ;------------------------------Aufgabe 2 mit magic numbe
+                       rs-----------
+  189 0000011C         
+  190 0000011C         Formel_2
+  191 0000011C E59F1024        LDR              R1, =DIV_9
+  192 00000120 E0020090        MUL              R2, R0, R0  ; X^2 in R2 abgespe
+                                                            ichert
+  193 00000124 E0843192        UMULL            R3, R4, R2, R1 ; x^2 wird mit M
+                                                            agicNumber multipli
+                                                            ziert, UMULL anstel
 
 
 
 ARM Macro Assembler    Page 5 
 
 
-                       CHAR_0  EQU              0x30
-  194 00000120                 ALIGN
-  195 00000120 00000064 
-                       X       DCD              100
-  196 00000124 00000BDB 
-                       Number  DCD              3035
-  197 00000128         
-  198 00000128         ;*******************************************************
+                                                            le von SMULL, da R2
+                                                             immer positiv ist,
+                                                             da R2 = R0^2 
+  194 00000128 E1A030A4        MOV              R3, R4, LSR #1 ; Rechts-Shift u
+                                                            m n = 1, s. Skript 
+                                                            S. 96 Tabelle 18, d
+                                                            amit Ergebnis nicht
+                                                             mehr als LONG vorl
+                                                            iegt, herunterskali
+                                                            eren durch Rechts-S
+                                                            hift nach mul mit M
+                                                            agicNumber -> LSR #
+                                                            1 == * 2^-n
+  195 0000012C E1A00103        MOV              R0, R3, LSL #2 ; Term wird mit 
+                                                            2^2 = 4 multiplizie
+                                                            rt und in R0 gespei
+                                                            chert
+  196 00000130 E12FFF1E        BX               LR
+  197 00000134         
+  198 00000134         ;*******************************************************
                        *************
-  199 00000128         ;* Ende der Programm-Quelle                             
+  199 00000134         ;* Konstanten im CODE-Bereich                           
                                    *
-  200 00000128         ;*******************************************************
+  200 00000134         ;*******************************************************
                        *************
-  201 00000128                 END
+  201 00000134         
+  202 00000134 31 30 30 
+              00       String  DCB              "100",0
+  203 00000138 00000030 
+                       CHAR_0  EQU              0x30
+  204 00000138                 ALIGN
+  205 00000138 00000064 
+                       X       DCD              100
+  206 0000013C 00000BDB 
+                       Number  DCD              3035
+  207 00000140 38E38E39 
+                       DIV_9   EQU              0x38E38E39  ; mit n=1
+  208 00000140 CCCCCCCD 
+                       DIV_10  EQU              0xCCCCCCCD  ; mit n=3
+  209 00000140         
+  210 00000140         ;*******************************************************
+                       *************
+  211 00000140         ;* Ende der Programm-Quelle                             
+                                   *
+  212 00000140         ;*******************************************************
+                       *************
+  213 00000140                 END
               00000000 
               00000000 
+              38E38E39 
 Command Line: --debug --xref --depend=.\assembler_startup.d -o.\assembler_start
 up.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM\Inc\Phili
 ps --predefine="__EVAL SETA 1" --list=.\assembler_startup.lst Assembler_Startup
@@ -400,13 +434,21 @@ Symbol: Formel
    Definitions
       At line 118 in file Assembler_Startup.s
    Uses
+      None
+Comment: Formel unused
+Formel_2 0000011C
+
+Symbol: Formel_2
+   Definitions
+      At line 190 in file Assembler_Startup.s
+   Uses
       At line 182 in file Assembler_Startup.s
-Comment: Formel used once
-Number 00000124
+Comment: Formel_2 used once
+Number 0000013C
 
 Symbol: Number
    Definitions
-      At line 196 in file Assembler_Startup.s
+      At line 206 in file Assembler_Startup.s
    Uses
       None
 Comment: Number unused
@@ -442,17 +484,9 @@ Symbol: Skip_first_positive
    Uses
       At line 80 in file Assembler_Startup.s
 Comment: Skip_first_positive used once
-String 0000011C
+String 00000134
 
 Symbol: String
-   Definitions
-      At line 192 in file Assembler_Startup.s
-   Uses
-      At line 48 in file Assembler_Startup.s
-Comment: String used once
-X 00000120
-
-Symbol: X
    Definitions
 
 
@@ -460,7 +494,15 @@ Symbol: X
 ARM Macro Assembler    Page 3 Alphabetic symbol ordering
 Relocatable symbols
 
-      At line 195 in file Assembler_Startup.s
+      At line 202 in file Assembler_Startup.s
+   Uses
+      At line 48 in file Assembler_Startup.s
+Comment: String used once
+X 00000138
+
+Symbol: X
+   Definitions
+      At line 205 in file Assembler_Startup.s
    Uses
       None
 Comment: X unused
@@ -511,8 +553,14 @@ Symbol: uItoBCD_Loop
       At line 144 in file Assembler_Startup.s
    Uses
       At line 162 in file Assembler_Startup.s
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
 Comment: uItoBCD_Loop used once
-21 symbols
+22 symbols
 
 
 
@@ -523,10 +571,26 @@ CHAR_0 00000030
 
 Symbol: CHAR_0
    Definitions
-      At line 193 in file Assembler_Startup.s
+      At line 203 in file Assembler_Startup.s
    Uses
       At line 99 in file Assembler_Startup.s
 Comment: CHAR_0 used once
+DIV_10 CCCCCCCD
+
+Symbol: DIV_10
+   Definitions
+      At line 208 in file Assembler_Startup.s
+   Uses
+      None
+Comment: DIV_10 unused
+DIV_9 38E38E39
+
+Symbol: DIV_9
+   Definitions
+      At line 207 in file Assembler_Startup.s
+   Uses
+      At line 191 in file Assembler_Startup.s
+Comment: DIV_9 used once
 RAM_Size 00000400
 
 Symbol: RAM_Size
@@ -535,5 +599,5 @@ Symbol: RAM_Size
    Uses
       At line 32 in file Assembler_Startup.s
 Comment: RAM_Size used once
-2 symbols
-360 symbols in table
+4 symbols
+363 symbols in table
