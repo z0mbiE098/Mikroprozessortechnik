@@ -7,29 +7,29 @@
 ;* Programmrumpf fuer Assembler-Programme mit dem Keil				*
 ;* Entwicklungsprogramm uVision fuer ARM-Mikrocontroller			*
 ;********************************************************************
-;* Aufgabe-Nr.:         	*	               						*
+;* Aufgabe-Nr.:         	*	 Verusch 1              			*
 ;*              			*						    			*
 ;********************************************************************
-;* Gruppen-Nr.: 			*										*
+;* Gruppen-Nr.: 			*	1. Gruppe am Freitag ab 3. Stunde	*
 ;*              			*										*
 ;********************************************************************
-;* Name / Matrikel-Nr.: 	*										*
-;*							*										*
+;* Name / Matrikel-Nr.: 	* Hanan Ahmed Ashir, 5012967			*
+;*							* Erwin Holzhauser, 5013983				*
 ;*							*										*
 ;********************************************************************
-;* Abgabedatum:         	*              							*
+;* Abgabedatum:         	*  19.12.2025            				*
 ;*							*										*
 ;********************************************************************
 
 ;********************************************************************
 ;* Daten-Bereich bzw. Daten-Speicher				            	*
 ;********************************************************************
-				AREA		Daten, DATA, READWRITE
+				AREA		Daten, DATA, READWRITE	;Ezeugung einer Speicherbereich für Daten(RAM)  					
 Datenanfang
 					
-RAM_Size      	EQU      	0x400     		; 1024 Byte Stack-Größe
+RAM_Size      	EQU      	0x400     		; 4*16^2=1024 bytes
 
-Top_Stack       EQU      	Datenanfang+RAM_Size
+Top_Stack       EQU      	Datenanfang+RAM_Size  
 Datenende       EQU      	Top_Stack
 
 ;********************************************************************
@@ -38,15 +38,14 @@ Datenende       EQU      	Top_Stack
 				
 				AREA		Programm, CODE, READONLY
 				ARM
-Reset_Handler	MSR			CPSR_c, #0x10	; User Mode
-				LDR SP, =Top_Stack
-
+Reset_Handler	MSR			CPSR_c, #0x10	; MSR=Move to Status Register. Der User Mode wird in CPSR geschrieben
+				
 ;********************************************************************
 ;* Hier das eigene (Haupt-)Programm einfuegen   					*
 ;********************************************************************
-				
-				LDR R0, =String             ;
-				BL Berechnung   			;
+				LDR SP, =Top_Stack		;Stack-pointer startet hier
+				LDR R0, =String		; Load Register: Die Adresse von vollständiges 32 Bit Wort wird geladen
+				BL Berechnung   	; 
 				
 				;LDR R0, =String
 				;BL AtoI
@@ -71,130 +70,64 @@ endlos	B					endlos	;
 
 ;------------------------Aufgabe 1-----------------------------------
 AtoI
-				PUSH {R1, R2, R3, R4, R5, LR}
-				MOV R2, #0
-				MOV R3, #0
-				LDRB R1, [R0]
+			STMFD SP! ,{R1-R5, LR} ;Store Multiple Full Descending, !-> Writeback Suffix: Nach dem Speichern der Daten wird der SP aktualisiert
+				MOV R2, #0				;Ergebnis wird hier gespeichert
+				MOV R3, #0				;Vorzeichen Flag: 0=positive, 1=negative
+				LDRB R1, [R0]			;Load Register Byte: Lädt nur ein einzelnes Byte, geeignet für Strings 
 				
-				CMP R1, #0x2B
-				BEQ Skip_first_positive
+				CMP R1, #0x2B			;CMP macht intern eine Subtraktion: R1 = R1-0x2B und setzt dann die Flags im CSPR
+				BEQ Skip_first_positive	; Branch if equal: Wenn Z=1, dann Skip_First_positive, ansonsten Zeile 82. 
 				
-				CMP R1, #0x2D
-				BEQ Set_Minus
-				B AtoI_Loop
+				CMP R1, #0x2D			; Auch R1=R1 -0x2D. 
+				BEQ Set_Minus			; Branch if equal: Wenn Z=1, dann Set_Minus, ansonsten Loopen
+				B AtoI_Loop				; Unconditional Branch. Immer springen.
 
 Skip_first_positive
-				ADD R0, R0, #1
-				B AtoI_Loop
+				ADD R0, R0, #1			; Falls erstes zeichen ein + war, überspringen und dann auf die nächste Ziffer zeigen
+				B AtoI_Loop				; In die Main-loop gehen
 				
 Set_Minus
-				MOV R3, #1
-				ADD R0, R0, #1
+				MOV R3, #1				; Falls - erkannt wird, setzte Flag auf 1 
+				ADD R0, R0, #1			; Auf die nächste Zeichen gehen und dann viola
 
 AtoI_Loop		
-				LDRB R1, [R0]
-				CMP R1, #0
-				BEQ AtoI_EndDigits
+				LDRB R1, [R0]			; Das nächste Zeochen wird jetzt in R1 geladen
+				CMP R1, #0				; Falls Zeichen 0, Z: Flag setzen
+				BEQ AtoI_EndDigits		; Springe zu Ende
 				
-				SUB R1, R1, #CHAR_0
-				MOV R4, R2, LSL #3
-				ADD R4, R4, R2, LSL#1
-				ADD R2, R4, R1
+				SUB R1, R1, #CHAR_0		; Zeichen werden in numerischer Wert konvertiert(z.B. 6(0x36) - 0(0x30) = 6) 
+				MOV R4, R2, LSL #3		; Ersten teil der Multiplikation. Die zahl die bisher in R2 steht muss auf Zehnerstelle rücken, um platz für die nächste Zahl zu machen.
+										; R4 = R2 * 8. 
+				ADD R4, R4, R2, LSL#1	; Add nimmt das Ergebnis von R4 und addiert die R2*2 dazu.
+										; R4  = Die bisherige Zahl(multipliziert mit 10)
+				ADD R2, R4, R1			; Jetzt müssen wir die neue Zahl bilden. (Alte Zahl in R4(60) + neue Zahl in R1(5) = "65___"
 				
-				ADD R0, R0, #1
-				B AtoI_Loop
+				ADD R0, R0, #1			; Zeiger auf den nächste Ziffer setzen und das ganze nochmal wiederholen
+				B AtoI_Loop				; Solange loopen bis der Nullterminator erreicht ist.
 AtoI_EndDigits
-				CMP R3, #0
-				BEQ AtoI_Positive
-				RSB R2, R2, #0
+				CMP R3, #0				; R3 = R3-0. Vorzeichen prüfen. 
+				BEQ AtoI_Positive		; Wenn der Flag am Anfang positive war, direkt zum Ergebnis 
+				RSB R2, R2, #0			; Wenn nicht, dann müssen wir Zweierkompliment bilden. Reverse Subtraction(R2=0-R2=-65535=0xFFFF0001)
 				
 AtoI_Positive
-				MOV R0, R2
-				POP {R1, R2, R3, R4, R5, LR}
-				BX LR
+				MOV R0, R2				; Ergenis wird in R0 wieder ausgegeben
+				LDMFD SP! ,{R1-R5, LR}	; Registern werden vom Stack wiederhergestellt
+				BX LR					; Branch and Exchange: Erkennt Rücksprungadressen und hilft uns auf die Adressen zu springen
 
-;------------------------Aufgabe 2-----------------------------------
+
+;-----------------Aufgabe 2 mit magic numbers-----------------------
 
 Formel
-				PUSH {R1, R2, R3, R4, LR}
-				MOV R1, R0
-				MUL R2, R1, R1
-				MOV R3, #0
-				
-Division_Loop
-				CMP R2, #9
-				BLT Division_Done
-				
-				SUB R2, R2, #9
-				ADD R3, R3, #1
-				B Division_Loop
-				
-Division_Done
-				MOV R0, R3, LSL #2
-				POP{R1, R2, R3, R4, LR}
-				BX LR
-	
-;------------------------Aufgabe 3-----------------------------------
-
-uItoBCD
-				PUSH {R1, R2, R3, R4, R5, LR}
-				MOV R1, #0
-				MOV R2, #0
-				
-uItoBCD_Loop
-				CMP R0, #0
-				BEQ uItoBCD_Done
-				MOV R3, R0
-				MOV R4, #0
-
-uItoBCD_Division_Loop
-				CMP R3, #10
-				BLT uItoBCD_END
-				SUB R3, R3, #10
-				ADD R4, R4, #1
-				B uItoBCD_Division_Loop
-				
-uItoBCD_END
-				MOV R5, R3, LSL R2
-				ORR R1, R1, R5
-				ADD R2, R2, #4
-				MOV R0, R4   ; -----------
-				B uItoBCD_Loop
-				
-uItoBCD_Done
-				MOV R0, R1
-				POP{R1, R2, R3, R4, R5, LR}
-				BX LR
-				
-;------------------------Aufgabe 4-----------------------------------
-
-; R0 (in)  = Adresse des Strings mit X (ASCII, evtl. mit + / -)
-; R0 (out) = Y als gepackte BCD-Zahl
-; Ablauf:
-;   AtoI   : String -> X (signed int)
-;   Formel : X -> Y  (signed int)
-;   uItoBCD: Y -> BCD(Y)
-Berechnung
-                PUSH {LR}         ; eigenen Rücksprung sichern
-
-                ;R0 = &String_X
-                BL AtoI           ; R0 = X (signed Integer)
-                BL Formel_2         ; R0 = Y = 4*X^2/9
-                BL uItoBCD_2        ; R0 = Y als BCD
-
-                POP {LR}
-                BX LR
-				
-;------------------------------Aufgabe 2 mit magic numbers-----------
-
-Formel_2
-				LDR        R1, =DIV_9		
-				MUL        R2, R0, R0        ; X^2 in R2 abgespeichert
-				UMULL      R3, R4, R2, R1    ; x^2 wird mit MagicNumber multipliziert, UMULL anstelle von SMULL, da R2 immer positiv ist, da R2 = R0^2 
-				MOV        R3, R4, LSR #1    ; Rechts-Shift um n = 1, s. Skript S. 96 Tabelle 18, damit Ergebnis nicht mehr als LONG vorliegt, herunterskalieren durch Rechts-Shift nach mul mit MagicNumber -> LSR #1 == * 2^-n
-				MOV        R0, R3, LSL #2    ; Term wird mit 2^2 = 4 multipliziert und in R0 gespeichert
-				BX		LR
-				
+				STMFD SP! ,{R1-R4, LR}
+				LDR        R1, =DIV_9		; R1 wird mit der Magic Number geladen(Siehe Skript Seite 96) 
+				MUL        R2, R0, R0		; Quadrat wird berechnet und in R2 gespeichert: R2 = (R0)^2
+				UMULL      R3, R4, R2, R1   ; UMULL: Unsigned Multiply long, weil X^2*DIV_9 eine Zahl>32-Bit ist. 
+											; Ergebis wird eine 64-Bit Zahl, die in zwei Registern gespeichert wird. (63-32)=R4, (31-0)=R3
+				MOV        R3, R4, LSR #1   ; Um die größe Zahl mit genauigkeit in einem register zu schreiben machen wir ein Right shift.(siehe "n" auf der Siete 96)
+											; Also (X^2/9) wird grob geschätzt und im Register R3 gespeichert.
+				MOV        R0, R3, LSL #2   ; Wir rechnen hier (X^2/9)*4. Also Link Shift um 2^2=4.
+				LDMFD  SP!, {R1-R4, LR}		; Registern werden wieder vom Stack entfernt und Ergebnis steht im R0
+				BX		LR					; Wieder zu Rücksprungadressen springen
 
 ;------------------------Aufgabe 3 mit magic numbers-----------------
 
@@ -206,50 +139,67 @@ Formel_2
 ;    }
 ;    return result;
 
-uItoBCD_2
-        PUSH {R1-R8, LR}
-        MOV  R1, #0          ; BCD-Ergebnis
-        MOV  R2, #0          ; shift = 0
-		LDR  R5, =DIV_10
-		MOV  R6, #10
+uItoBCD
+        STMFD SP! ,{R1-R8, LR}				; Register R1 bis R8 auf den Stack laden.
+        MOV  R1, #0          				; Ergebnis wird hier gespeichert
+        MOV  R2, #0          				; Shift kommmt hier. (0,4,8,...)
+		LDR  R5, =DIV_10					; R5 bekommt magische Nummer für Division durch 10
+		MOV  R6, #10						; R6 bekommt die Konstante Zahl 10 für Modulo-Operation
 
-uItoBCD_Loop_2
-        CMP  R0, #0
-        BEQ  uItoBCD_Done_2
+uItoBCD_Loop
+        CMP  R0, #0							; R0 = R0-0 und Flags Setzen. Falls Ergebnis 0, dann sind wir schon fertig
+        BEQ  uItoBCD_Done					; Springe zu Ende
 
         
-        UMULL R3, R7, R0, R5                    
-        MOV R3, R7, LSR#3  		; q = R0 / 10
+        UMULL R3, R7, R0, R5                ; Unsigned Integer, also UMULL darf verwendet werden. 
+											; R0 wird mit magische Nummer multipliziert und Ergebnis wird in R3 ind R7 gespeichert   
+        MOV R3, R7, LSR#3  					; Genauere Ergebis in 32 Bit, R7 muss noch 3 bits geshiftet werden(siehe "n" Seite 96)
+											; Für 123 berechnen wir: q = 123/10 = 12(kommt in R3)
+		
+        MUL R4, R3, R6						; In R4 steht jetzt = q * 10.  Dann ist R4=12*10=120 
+		SUB R4, R0, R4       				; r = R0 - (q * 10) , sprich modulo. (123 -120) = 3. Also letzte Dezimalziffer steht in R4
+		
+		MOV R8, R4, LSL R2   				; Nimmt den Inhalt von n und schiebt so viele Bits nach links, wie in R2 steht
+											; Das Ergebnis landet dann in R8
+		ADD R1, R1, R8       				; R1 speichert das BCD Ergebnis, R8 wird dort addiert.
 	
 		
-        MUL R4, R3, R6		; R4 = q * 10
-		SUB R4, R0, R4       ; r = R0 - q * 10 , sprich modulo
-		
-		MOV R8, R4, LSL R2   ; R8 = (R0 % 10) << shift R2
-		ADD R1, R1, R8       ; result += R8
-	
-		
-		MOV R0, R3           ; R0 = R0/10 --> nächste iteration
-		ADD R2, R2, #4       ; bei jeder iteration wird einmla mehr um 4 geshiftet
+		MOV R0, R3          				; R3 enthält die Quotient, das wird in R0 als Eingabe geschickt und die nächste Iteration beginnt
+		ADD R2, R2, #4       				; bei jeder iteration wird einmla mehr um 4 geshiftet, damit die nächste Dezimalzahl richtig positioniert wird
 
-		B    uItoBCD_Loop_2
+		B    uItoBCD_Loop					; Sprint zurück zum Anfang der Schleife
 
-uItoBCD_Done_2
-        MOV  R0, R1          ; Rückgabe: BCD
-        POP  {R1-R8, LR}
-        BX   LR
+uItoBCD_Done
+        MOV  R0, R1          				; Fertige BCD Ergnis wird in R0 gemoved 
+        LDMFD SP! ,{R1-R8, LR}				; Registern wieder freimachen
+        BX   LR								; Zur Rücksprungadresse springen
+				
+;------------------------Aufgabe 4-----------------------------------
+
+Berechnung
+                STMFD SP!, {LR}         ; Rücksprungadresse sichern
+				
+                BL AtoI           		; R0 = X (signed Integer)
+                BL Formel        		; R0 = Y = 4*X^2/9
+                BL uItoBCD        		; R0 = Y als BCD
+
+                LDMFD SP! ,{LR}
+                BX LR
+				
 				
 ;********************************************************************
 ;* Konstanten im CODE-Bereich                                       *
 ;********************************************************************
 
-String DCB "100",0
+String DCB "3040",0
+	ALIGN								 ;Falls die Adresse nicht durch 4 teilbar ist, fülle sie mit Nullen
+DIV_9            EQU 0x38E38E39     ; mit n=1
+DIV_10           EQU 0xCCCCCCCD    ; mit n=3
 CHAR_0 EQU 0x30
-		ALIGN
-X DCD 100
-Number DCD 3035 
-DIV_9            EQU            0x38E38E39     ; mit n=1
-DIV_10            EQU            0xCCCCCCCD    ; mit n=3
+	
+;X DCD 100
+;Number DCD 3043
+
 
 ;********************************************************************
 ;* Ende der Programm-Quelle                                         *
