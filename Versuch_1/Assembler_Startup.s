@@ -27,9 +27,9 @@
 				AREA		Daten, DATA, READWRITE	;Ezeugung einer Speicherbereich für Daten(RAM)  					
 Datenanfang
 					
-RAM_Size      	EQU      	0x400     		; 4*16^2=1024 bytes
 
-Top_Stack       EQU      	Datenanfang+RAM_Size  
+X           	EQU         Datenanfang
+Top_Stack       EQU      	Datenanfang + RAM_Size  
 Datenende       EQU      	Top_Stack
 
 ;********************************************************************
@@ -44,7 +44,7 @@ Reset_Handler	MSR			CPSR_c, #0x10	; MSR=Move to Status Register. Der User Mode w
 ;* Hier das eigene (Haupt-)Programm einfuegen   					*
 ;********************************************************************
 				LDR SP, =Top_Stack		;Stack-pointer startet hier
-				LDR R0, =String		; Load Register: Die Adresse von vollständiges 32 Bit Wort wird geladen
+				LDR R0, =X		; Load Register: Die Adresse von vollständiges 32 Bit Wort wird geladen
 				BL Berechnung   	; 
 				
 				;LDR R0, =String
@@ -156,10 +156,10 @@ uItoBCD_Loop
         MOV R3, R7, LSR#3  					; Genauere Ergebis in 32 Bit, R7 muss noch 3 bits geshiftet werden(siehe "n" Seite 96)
 											; Für 123 berechnen wir: q = 123/10 = 12(kommt in R3)
 		
-        MUL R4, R3, R6						; In R4 steht jetzt = q * 10.  Dann ist R4=12*10=120 
+        MUL R4, R3, R6						; In R4 steht jetzt = q * 10.  Dann ist R4=12*10=120                                                    ------ mul lieber mit shift -> schneller
 		SUB R4, R0, R4       				; r = R0 - (q * 10) , sprich modulo. (123 -120) = 3. Also letzte Dezimalziffer steht in R4
 		
-		MOV R8, R4, LSL R2   				; Nimmt den Inhalt von n und schiebt so viele Bits nach links, wie in R2 steht
+		MOV R8, R4, LSL R2   				; Nimmt den Inhalt von n und schiebt so viele Bits nach links, wie in R2 steht                          ------ kann man sich sparen, diretk bei add shiften
 											; Das Ergebnis landet dann in R8
 		ADD R1, R1, R8       				; R1 speichert das BCD Ergebnis, R8 wird dort addiert.
 	
@@ -191,11 +191,11 @@ Berechnung
 ;* Konstanten im CODE-Bereich                                       *
 ;********************************************************************
 
-String DCB "3040",0
-	ALIGN								 ;Falls die Adresse nicht durch 4 teilbar ist, fülle sie mit Nullen
+							
 DIV_9            EQU 0x38E38E39     ; mit n=1
 DIV_10           EQU 0xCCCCCCCD    ; mit n=3
-CHAR_0 EQU 0x30
+CHAR_0			 EQU 0x30
+RAM_Size		 EQU 0x400     		; 4*16^2=1024 bytes
 	
 ;X DCD 100
 ;Number DCD 3043
