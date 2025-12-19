@@ -27,7 +27,7 @@
 				AREA		Daten, DATA, READWRITE	;Ezeugung einer Speicherbereich für Daten(RAM)  					
 Datenanfang
 					
-RAM_Size      	EQU      	0x400     		; 4*16^2=1024 bytes
+RAM_Size      	EQU      	0x800     		; 4*16^2=1024 bytes
 
 Top_Stack       EQU      	Datenanfang+RAM_Size  
 Datenende       EQU      	Top_Stack
@@ -39,7 +39,9 @@ Datenende       EQU      	Top_Stack
 				AREA		Programm, CODE, READONLY
 				ARM
 Reset_Handler	MSR			CPSR_c, #0x10	; MSR=Move to Status Register. Der User Mode wird in CPSR geschrieben
-				
+
+String DCB "10",0
+	ALIGN								 	; Falls die Adresse nicht durch 4 teilbar ist, fülle sie mit Nullen
 ;********************************************************************
 ;* Hier das eigene (Haupt-)Programm einfuegen   					*
 ;********************************************************************
@@ -69,50 +71,41 @@ endlos	B					endlos	;
 
 
 ;------------------------Aufgabe 1-----------------------------------
+
 AtoI
-			STMFD SP! ,{R1-R5, LR} ;Store Multiple Full Descending, !-> Writeback Suffix: Nach dem Speichern der Daten wird der SP aktualisiert
-				MOV R2, #0				;Ergebnis wird hier gespeichert
-				MOV R3, #0				;Vorzeichen Flag: 0=positive, 1=negative
-				LDRB R1, [R0]			;Load Register Byte: Lädt nur ein einzelnes Byte, geeignet für Strings 
+				STMFD	SP!, {R1-R5, LR}
+                MOV     R2, #0   		; Hier wird das Ergebnis gespeichert
+				MOV		R5, #0			; Hier kommt der Status Flag
 				
-				CMP R1, #0x2B			;CMP macht intern eine Subtraktion: R1 = R1-0x2B und setzt dann die Flags im CSPR
-				BEQ Skip_first_positive	; Branch if equal: Wenn Z=1, dann Skip_First_positive, ansonsten Zeile 82. 
+                LDRB    R1, [R0]        ; Das erste Zeichen von der Eingabe wird geprüft
+				CMP		R1, #0x2D 		; CMP macht intern eine Subtraktion: R1 = R1-0x2D und setzt die Flags im CSPR
+				MOVEQ	R5, R1			; Setze Flag in R5. Move if Z-Flag=1
 				
-				CMP R1, #0x2D			; Auch R1=R1 -0x2D. 
-				BEQ Set_Minus			; Branch if equal: Wenn Z=1, dann Set_Minus, ansonsten Loopen
-				B AtoI_Loop				; Unconditional Branch. Immer springen.
+				CMPNE	R1, #0x2B		; Auch eine Subtraktion: R1 = R1-0x2B und die Flags in CSPR werden gesetzt 
+				ADDEQ	R0, R0, #1		; Wenn Zeichen + ist und Flag gesetzt ist, wird ADDEQ ausgeführt und Pointer wird zu nächster Stelle inkrementiert			
 
-Skip_first_positive
-				ADD R0, R0, #1			; Falls erstes zeichen ein + war, überspringen und dann auf die nächste Ziffer zeigen
-				B AtoI_Loop				; In die Main-loop gehen
-				
-Set_Minus
-				MOV R3, #1				; Falls - erkannt wird, setzte Flag auf 1 
-				ADD R0, R0, #1			; Auf die nächste Zeichen gehen und dann viola
+AtoI_Loop
+				LDRB    R1, [R0], #1    ; Load Register Byte. Zeochen aus R0 wird geladen und Zeiger zeigt mit #1 direkt auf die nächste Stelle 
+                CMP     R1, #0          ; R1=R1-0. Flags setzen
+                BEQ     AtoI_End  		; Falls Stringende erreicht, dann zum Ende springen
+          
+                SUB     R1, R1, #CHAR_0 	; ASCII Zeichen werden in numerischer Wert konvertiert(z.B. 6(0x36) - 0(0x30) = 6)
 
-AtoI_Loop		
-				LDRB R1, [R0]			; Das nächste Zeochen wird jetzt in R1 geladen
-				CMP R1, #0				; Falls Zeichen 0, Z: Flag setzen
-				BEQ AtoI_EndDigits		; Springe zu Ende
+                MOV     R4, R2, LSL #3      ; Ersten teil der Multiplikation. 
+											; Die zahl die bisher in R2 steht muss auf Zehnerstelle rücken, um platz für die nächste Zahl zu machen.
+                ADD     R4, R4, R2, LSL #1  ; Add nimmt das Ergebnis von R4 und addiert die R2*2 dazu.
+											; R4  = Die bisherige Zahl(multipliziert mit 10)
+                ADD     R2, R4, R1          ; Jetzt müssen wir die neue Zahl bilden. (Alte Zahl in R4(60) + neue Zahl in R1(5) = "65___"
+                B       AtoI_Loop			; Zurück zum Anfang, wo es weitergeht
 				
-				SUB R1, R1, #CHAR_0		; Zeichen werden in numerischer Wert konvertiert(z.B. 6(0x36) - 0(0x30) = 6) 
-				MOV R4, R2, LSL #3		; Ersten teil der Multiplikation. Die zahl die bisher in R2 steht muss auf Zehnerstelle rücken, um platz für die nächste Zahl zu machen.
-										; R4 = R2 * 8. 
-				ADD R4, R4, R2, LSL#1	; Add nimmt das Ergebnis von R4 und addiert die R2*2 dazu.
-										; R4  = Die bisherige Zahl(multipliziert mit 10)
-				ADD R2, R4, R1			; Jetzt müssen wir die neue Zahl bilden. (Alte Zahl in R4(60) + neue Zahl in R1(5) = "65___"
-				
-				ADD R0, R0, #1			; Zeiger auf den nächste Ziffer setzen und das ganze nochmal wiederholen
-				B AtoI_Loop				; Solange loopen bis der Nullterminator erreicht ist.
-AtoI_EndDigits
-				CMP R3, #0				; R3 = R3-0. Vorzeichen prüfen. 
-				BEQ AtoI_Positive		; Wenn der Flag am Anfang positive war, direkt zum Ergebnis 
-				RSB R2, R2, #0			; Wenn nicht, dann müssen wir Zweierkompliment bilden. Reverse Subtraction(R2=0-R2=-65535=0xFFFF0001)
-				
-AtoI_Positive
-				MOV R0, R2				; Ergenis wird in R0 wieder ausgegeben
-				LDMFD SP! ,{R1-R5, LR}	; Registern werden vom Stack wiederhergestellt
-				BX LR					; Branch and Exchange: Erkennt Rücksprungadressen und hilft uns auf die Adressen zu springen
+AtoI_End
+				CMP		R5, #0			; Falls im R5 eine negative Flag steht.
+				RSBNE	R2, R2, #0		; Reverse Substract Not Equals, 0 - R2, falls negative Flag gesetzt ist, um Zahl zu negieren		
+				MOV 	R0, R2			; Ergebnis in R0 abspeichern
+				LDMFD	SP!, {R1-R5, LR} ; Registern wieder freigeben
+				BX		LR
+
+
 
 
 ;-----------------Aufgabe 2 mit magic numbers-----------------------
@@ -191,8 +184,6 @@ Berechnung
 ;* Konstanten im CODE-Bereich                                       *
 ;********************************************************************
 
-String DCB "3040",0
-	ALIGN								 ;Falls die Adresse nicht durch 4 teilbar ist, fülle sie mit Nullen
 DIV_9            EQU 0x38E38E39     ; mit n=1
 DIV_10           EQU 0xCCCCCCCD    ; mit n=3
 CHAR_0 EQU 0x30
