@@ -29,7 +29,7 @@ Datenanfang
 					
 RAM_Size      	EQU      	0x400     		; 4*16^2=1024 bytes
 
-X           	EQU         Datenanfang
+X           	EQU         Datenanfang     ; in memory -> ASCII 0x40000000
 Top_Stack       EQU      	Datenanfang + RAM_Size
 Datenende       EQU      	Top_Stack
 
@@ -183,8 +183,6 @@ Berechnung
 ;* Konstanten im CODE-Bereich                                       *
 ;********************************************************************
 
-String DCB "3040",0
-	ALIGN								 ;Falls die Adresse nicht durch 4 teilbar ist, f�lle sie mit Nullen
 DIV_9            EQU 0x38E38E39     ; mit n=1
 DIV_10           EQU 0xCCCCCCCD    ; mit n=3
 CHAR_0			 EQU 0x30
