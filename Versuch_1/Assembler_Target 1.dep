@@ -1,2 +1,2 @@
 Dependencies for Project 'Assembler', Target 'Target 1': (DO NOT MODIFY !)
-F (.\Assembler_Startup.s)(0x69443BF4)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\Philips--list .\assembler_startup.lst --xref -o .\assembler_startup.o --depend .\assembler_startup.d)
+F (.\Assembler_Startup.s)(0x69450F4E)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\Philips--list .\assembler_startup.lst --xref -o .\assembler_startup.o --depend .\assembler_startup.d)

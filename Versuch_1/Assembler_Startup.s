@@ -27,7 +27,6 @@
 				AREA		Daten, DATA, READWRITE	;Ezeugung einer Speicherbereich f�r Daten(RAM)  					
 Datenanfang
 					
-RAM_Size      	EQU      	0x400     		; 4*16^2=1024 bytes
 
 X           	EQU         Datenanfang     ; in memory -> ASCII 0x40000000
 Top_Stack       EQU      	Datenanfang + RAM_Size
@@ -79,9 +78,10 @@ AtoI
 				
                 LDRB    R1, [R0]        ; Das erste Zeichen von der Eingabe wird gepr�ft
 				CMP		R1, #0x2D 		; CMP macht intern eine Subtraktion: R1 = R1-0x2D und setzt die Flags im CSPR
-				MOVEQ	R5, R1			; Setze Flag in R5. Move if Z-Flag=1
+				MOVEQ	R5, R1			;
+				ADDEQ	R0, R0, #1		; Setze Flag in R5. Move if Z-Flag=1
 				
-				CMPNE	R1, #0x2B		; Auch eine Subtraktion: R1 = R1-0x2B und die Flags in CSPR werden gesetzt
+				CMP	R1, #0x2B		; Auch eine Subtraktion: R1 = R1-0x2B und die Flags in CSPR werden gesetzt
 				ADDEQ	R0, R0, #1		; Wenn Zeichen + ist und Flag gesetzt ist, wird ADDEQ ausgef�hrt und Pointer wird zu n�chster Stelle inkrementiert
 
 AtoI_Loop
