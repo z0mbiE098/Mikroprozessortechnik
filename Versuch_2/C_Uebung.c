@@ -40,7 +40,7 @@ static const unsigned long BCD_Zahlen[10] = {
 	0xFC0000, 							// Zahl 0
 	0x180000, 							// Zahl 1
 	0x16C0000, 							// Zahl 2
-	0x13C000, 							// Zahl 3
+	0x13C0000, 							// Zahl 3
 	0x1980000,							// Zahl 4
 	0x1B40000, 							// Zahl 5
 	0x1F40000, 							// Zahl 6
@@ -90,17 +90,44 @@ void updateBCD(unsigned int value){
 	IOSET0 = BCD_Zahlen[value];						// BCD wird zu eingegebene Zahl eingesetzt
 }
 
+void initTimer(void){
+	T0TCR = 0x02;
+	T0PR = (PERI_TAKT / 1000) -1;
+	T0MR0 = 1000;
+	T0MCR = 0x03;
+	
+	VICVectAddr4 = (unsigned long)T0isr;
+	
+	VICVectCntl4 = 0x20 | 4;
+	VICIntEnable = (1 << 4);
+	
+	T0TCR = 0x01;
+}
+
+void T0isr(void) __irq{
+	static unsigned int led_pos = 0;
+	IOCLR1 = LED_MASK;
+	IOSET1 = (1 << (16 + led_pos));
+	
+	led_pos = (led_pos +1) % 8;
+	
+	T0IR = 0x01;
+	VICVectAddr = 0x00;
+	
+}
+
 
 int main (void)  
 {
 	unsigned int bcd_value;
-	initLED();
-	initBCD();
+	//initLED();
+	//initBCD();
 	
+	initTimer();
  	while (1)  
 	{
-		bcd_value = readBCDInput();
-		updateLED(bcd_value);
-		updateBCD(bcd_value);
+	//	bcd_value = readBCDInput();
+	//	updateLED(bcd_value);
+	//	updateBCD(bcd_value);
 	}
 }
