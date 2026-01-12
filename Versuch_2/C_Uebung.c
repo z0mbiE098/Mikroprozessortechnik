@@ -36,17 +36,24 @@
 #define LED_MAX 0xFF										// Maximales LED-Muster
 #define PERI_TAKT 12500000									// Takt der Peripherie Komponente
 
+volatile unsigned int g_step = 0;
+
 static const unsigned long BCD_Zahlen[10] = {
 	0xFC0000, 							// Zahl 0
 	0x180000, 							// Zahl 1
 	0x16C0000, 							// Zahl 2
-	0x13C000, 							// Zahl 3
+	0x13C0000, 							// Zahl 3
 	0x1980000,							// Zahl 4
 	0x1B40000, 							// Zahl 5
 	0x1F40000, 							// Zahl 6
 	0x1C0000, 							// Zahl 7
 	0x1FC0000, 							// Zahl 8
 	0x1BC0000								// Zahl 9
+};
+
+
+static const unsigned long delay_steps[10] = {
+   2ul, 5ul, 10ul, 25ul, 50ul, 100ul, 250ul, 500ul, 750ul, 1000ul
 };
 
 //Funktionen
@@ -57,7 +64,7 @@ void updateBCD(unsigned int value);			// BCD-Anzeige Aktualsiieren
 void updateLED(unsigned int pattern);		// LEDs aktualisieren
 unsigned int readBCDInput(void);				// Eingabe einlesen
 unsigned int readSwitchState(void);			// Schalter Status einlesen
-void initTimer(void);										// Timer initialisieren
+void initTimer(volatile unsigned long loops);										// Timer initialisieren
 void T0isr(void) __irq;									// Timer Interuppt Service Routine
 
 
@@ -80,7 +87,7 @@ unsigned int readBCDInput(void){
 
 void updateLED(unsigned int pattern){   
 		IOCLR1 = LED_MASK;									// Alle LEDs ausschalten
-	IOSET1 = (pattern << 16) & LED_MASK;							// Eingegebene LED wird um 16 Stellen nach links geschoben, um die LEds die binäre Darstellung des BCDs Wert zu geben
+	IOSET1 = (pattern << 16);							// Eingegebene LED wird um 16 Stellen nach links geschoben, um die LEds die binäre Darstellung des BCDs Wert zu geben
 }
 
 void updateBCD(unsigned int value){
@@ -91,16 +98,45 @@ void updateBCD(unsigned int value){
 }
 
 
+void initTimer(volatile unsigned long loops) {
+	
+	
+	while(loops--) {
+		volatile unsigned long x = 3000ul;
+		while (x--) {}
+	}
+	
+
+}
+
+
 int main (void)  
 {
 	unsigned int bcd_value;
+	int i;
+	g_step = readBCDInput();
+	
+	if (g_step > 9) {
+		g_step = 9;
+	}
 	initLED();
 	initBCD();
 	
- 	while (1)  
+	
+ 	/* while (1)  
 	{
 		bcd_value = readBCDInput();
 		updateLED(bcd_value);
 		updateBCD(bcd_value);
+	} */
+
+	
+	while (1) {
+		for (i = 0 ; i < 10; i++) {
+			updateLED(i);
+			initTimer(delay_steps[g_step]);
+			updateBCD(g_step);
+		
+		}
 	}
 }
