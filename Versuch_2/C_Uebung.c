@@ -1,6 +1,6 @@
 /********************************************************************/
 /*  Hochschule fuer Technik und Wirtschaft                          */
-/*  FakultÔøΩt fuer Ingenieurwissenschaften                           */
+/*  Fakult?t fuer Ingenieurwissenschaften                           */
 /*  Labor fuer Eingebettete Systeme                                 */
 /*  Mikroprozessortechnik                                           */
 /********************************************************************/
@@ -11,7 +11,7 @@
 #define SEGMENT_MASK 0x01FC0000					// 7 Segment Display P0.18-P0.24
 #define LED_MASK 0xFF0000								// LEDS an P1.16 - P1.23
 #define SWITCH_MASK 0x30000							// Schalter an P0.16 und P0.17 (S1,S2)
-#define INPUT_MASK 0x3C00								// Eingabemaske fÔøΩr BCD
+#define INPUT_MASK 0x3C00								// Eingabemaske f?r BCD
 #define BCD_MAX 9												// Maximalwert der BCD-Anzeige
 #define LED_MAX 0xFF										// Maximales LED-Muster
 #define PERI_TAKT 12500000								// Takt der Peripherie Komponente
@@ -31,6 +31,11 @@ static const unsigned long BCD_Zahlen[10] = {
 	0x1BC0000								// Zahl 9
 };
 
+static const unsigned int time_periods[10] = {
+	2, 5, 10, 25, 50, 100, 250, 500, 750, 1000
+};
+	
+
 // Funktionen
 void initLED(void);											// LED Initialisierung
 void initBCD(void);											// BCD-Anzeige Initialisierung
@@ -41,7 +46,7 @@ unsigned int readSwitchState(void);			// Schalter Status einlesen (S1,S2,S3)
 void initTimer(void);										// Timer initialisieren
 void T0isr(void) __irq;									// Timer Interrupt Service Routine
 
-// ---- Neu f√ºr Aufgabe 3: Tick-Flag ----
+// ---- Neu f¸r Aufgabe 3: Tick-Flag ----
 static volatile unsigned int g_tick_1s = 0;
 
 
@@ -53,7 +58,7 @@ void initLED(void){
 
 void initBCD(void){
 	IODIR0 = SEGMENT_MASK;								// P0.18 - P0.24 als Ausgang definieren
-	IOCLR0 = SEGMENT_MASK;								// Anzeige aus
+	IOCLR0 = SEGMENT_MASK;
 }
 
 unsigned int readBCDInput(void){
@@ -71,7 +76,18 @@ void updateBCD(unsigned int value){
 	IOSET0 = BCD_Zahlen[value];
 }
 
-// R√ºckgabe-Bits: bit0=S1, bit1=S2, bit2=S3
+
+void setTimerPeriod(unsigned int ms){
+	if(ms == 0){
+		T0TCR = 0x02;
+		T0MR0 = ms;
+		T0TCR = 0x01;
+	}
+}
+
+
+
+// R¸ckgabe-Bits: bit0=S1, bit1=S2, bit2=S3
 // ACTIVE-LOW: Schalter "1" => Pin = 0
 unsigned int readSwitchState(void){
     unsigned int s = 0;
@@ -102,7 +118,7 @@ void initTimer(void){
 	T0TCR = 0x01;													// start
 }
 
-// ---- Ge√§ndert f√ºr Aufgabe 3: ISR setzt nur Tick-Flag ----
+// ---- Ge‰ndert f¸r Aufgabe 3: ISR setzt nur Tick-Flag ----
 void T0isr(void) __irq{
 	g_tick_1s = 1;												// 1s Tick melden
 
@@ -115,6 +131,7 @@ int main (void)
 	unsigned int sw;
 	unsigned int led_pos = 0;								// 0..7
 	unsigned int bcd_digit = 0;			// 0..9
+	unsigned int bcd = readBCDInput();
 	
 	PINSEL1 &= ~((3U << 0) | (3U << 2));
 
@@ -128,6 +145,28 @@ int main (void)
 
  	while (1)
 	{
+		
+		// --- NEU EINGEF‹GT: Zeitbasis anpassen ---
+        unsigned int bcd_in = readBCDInput();
+        
+        // Sicherheitsbegrenzung auf 9, falls der Schalter auf A-F steht
+        if (bcd_in > 9) bcd_in = 9; 
+
+        // Pr¸fen, ob der Timer-Wert angepasst werden muss
+        if (T0MR0 != time_periods[bcd_in]) 
+        {
+            T0MR0 = time_periods[bcd_in]; // Neuen Endwert setzen
+            
+            // WICHTIG: Falls der aktuelle Z‰hler (T0TC) schon grˆﬂer ist als 
+            // der neue Zielwert (T0MR0), w¸rde der Timer bis zum ‹berlauf 
+            // weiterlaufen (ca. 7 Minuten!). Deshalb: Z‰hler resetten.
+            if (T0TC >= T0MR0) 
+            {
+                T0TC = 0;
+            }
+        }
+		
+		
 		if (g_tick_1s)											// alle 1 Sekunde
 		{
 			g_tick_1s = 0;
@@ -144,20 +183,20 @@ int main (void)
 			}
 
 			// S1 = 1 => Lauflicht je nach S2
-			if ((sw & 2U) != 0U)								// S2=0 vorw√§rts
+			if ((sw & 2U) != 0U)								// S2=0 vorw‰rts
 			{
 				updateLED(1U << led_pos);
 				led_pos = (led_pos + 1U) % 8U;
 			}
-			else																	// S2=1 r√ºckw√§rts
+			else																	// S2=1 r¸ckw‰rts
 			{
 				updateLED(1U << led_pos);
 				if (led_pos == 0U) led_pos = 7U;
 				else led_pos--;
 			}
 
-			// 7-Segment: nur wenn S3 = 0 z√§hlen, sonst aus
-			if ((sw & 4U) != 0U)								// S3=0 z√§hlen
+			// 7-Segment: nur wenn S3 = 0 z‰hlen, sonst aus
+			if ((sw & 4U) != 0U)								// S3=0 z‰hlen
 			{
 				updateBCD(bcd_digit);
 				bcd_digit++;
@@ -167,8 +206,10 @@ int main (void)
 			{
 				updateBCD(bcd_digit);
 				if (bcd_digit == 0U) bcd_digit = 9U;
-				else bcd_digit--;							// beim n√§chsten Aktivieren wieder ab 0
+				else bcd_digit--;							// beim n‰chsten Aktivieren wieder ab 0
 			}
+			
 		}
 	}
+
 }
