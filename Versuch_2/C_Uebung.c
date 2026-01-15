@@ -34,7 +34,7 @@
 #define PERI_TAKT 12500000             // Takt der Peripherie Komponente
 
 // Lookup-Tabellen
-static const unsigned long BCD_Zahlen[10] = {
+static const unsigned long SEGMENT_Zahlen[10] = {
     0xFC0000,     // 0
     0x180000,     // 1
     0x16C0000,    // 2
@@ -86,7 +86,7 @@ void updateLED(unsigned int pattern){
 void updateSegment7(unsigned int value){
     if(value > BCD_MAX) value = BCD_MAX;
     IOCLR0 = SEGMENT7_MASK;
-    IOSET0 = BCD_Zahlen[value];
+    IOSET0 = SEGMENT_Zahlen[value];
 }
 
 unsigned int readSwitchState(void){
@@ -98,6 +98,7 @@ unsigned int readSwitchState(void){
 }
 
 void initTimer(void){
+	  T0TCR = 0x00;
     T0TCR = 0x02;                      // Timer Reset
     T0PR  = (PERI_TAKT / 1000) - 1;    // Prescaler für 1 ms Auflösung
     T0MR0 = 1000;                      // Default: 1000 ms = 1 s
@@ -110,27 +111,36 @@ void initTimer(void){
     T0TCR = 0x01;                      // Timer Start
 }
 
+
 void T0isr(void) __irq{
-    unsigned int sw;
+    unsigned int sw = readSwitchState();
     unsigned int bcd_in;
+	  unsigned int led_pos = 0;      // Aktuelle Position Lauflicht (0..7)
+    unsigned int segment7_digit = 0;    // Aktuelle Zahl 7-Segment (0..9)
+	
+
 
     bcd_in = readBCDInput();
     if (bcd_in > 9) bcd_in = 9;
 
     if (T0MR0 != time_periods[bcd_in]) {
-        T0MR0 = time_periods[bcd_in];
+          T0TCR = 0;                        // anhalten
+					T0MR0 = time_periods[bcd_in];     // aktualsieren
+			    T0MCR = 0x03;
+					T0TCR = 2;                        // reset
+					T0TCR = 1;                        // start
+			     T0TC = 0;                        // counter reset
+			   
 
-        if (T0TC >= T0MR0) {
-            T0TC = 0;
-        }
+        
     }
 
-    sw = readSwitchState();
+    
 
-    if ((sw & 1U) != 0U)
+    if ((sw & 1U) != 0U)              // s1 (0.16) resetten alle leds und segmente
     {
         updateLED(0);
-        IOCLR0 = SEGMENT7_MASK; // 7-Segment aus
+        IOCLR0 = SEGMENT7_MASK; 
         led_pos = 0;
         segment7_digit = 0;
     }
@@ -170,7 +180,7 @@ void T0isr(void) __irq{
 
 int main (void)
 {
-    PINSEL1 &= ~((3U << 0) | (3U << 2));
+	  initLED();
     initSegment7();
     updateLED(0);
     IOCLR0 = SEGMENT7_MASK;
