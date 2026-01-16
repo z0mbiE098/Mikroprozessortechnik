@@ -27,6 +27,7 @@
 #include <LPC21xx.H>        /* LPC21xx Definitionen                     */
 
 // Masken und Konstanten
+
 #define SEGMENT7_MASK 0x01FC0000        // 7 Segment Display P0.18-P0.24
 #define LED_MASK 0xFF0000              // LEDS an P1.16 - P1.23
 #define SWITCH_MASK 0x30000            // Schalter an P0.16 und P0.17 (S1,S2)
@@ -115,8 +116,8 @@ void initTimer(void){
 void T0isr(void) __irq{
     unsigned int sw = readSwitchState();
     unsigned int bcd_in;
-	  unsigned int led_pos = 0;      // Aktuelle Position Lauflicht (0..7)
-    unsigned int segment7_digit = 0;    // Aktuelle Zahl 7-Segment (0..9)
+	  // unsigned int led_pos = 0;      // Aktuelle Position Lauflicht (0..7)
+    // unsigned int segment7_digit = 0;    // Aktuelle Zahl 7-Segment (0..9)
 	
 
 
