@@ -1,0 +1,18 @@
+Aufgabe: serielle Datenübertragung über V.24-Schnittstelle
+Schreiben Sie ein C-Programm unter Verwendung der oben bereits getesteten Funktionen.
+Die V.24-Schnittstelle UART1 wird initialisiert (19200 Baud, 1 Startbit, 8 Datenbits, gerade Paritätsprüfung
+(even parity), 2 Stoppbits).
+Danach sollen (zur Kontrolle der Kommunikation) die ASCII-Zeichen der Ziffern von "0" bis "9" über die
+V.24-Schnitstelle übertragen werden.
+An die serielle Schnittstelle wird die COM-Schnittstelle vom PC angeschlossen, auf dem dann die Zeichen
+z. B. mit dem Programm „Hyperterminal“ dargestellt werden können.
+Anschließend kann der Bediener über die serielle Schnittstelle in einer Endlosschleife zwei unterschiedliche
+Kommandos eingeben:
+1. Das Kommando „D“, gefolgt von einer beliebigen, max. 8-stelligen, positiven, ganzen Hex-Zahl
+(Abschuss mit CR), kann eingegeben werden.
+Diese Zahl entspricht einer Speicheradresse. Von dieser Speicheradresse soll der Inhalte als „Hex-
+Dump“ übertragen werden.
+Beispiel: Eingabe: „D 4000000A“, CR
+Diese Eingabe entspricht der Adresse 0x4000 000A. Wenn nun an dieser Adresse
+z. B. der Wert 0xC8 steht, wird anschließend die folgende Zeile ausgegeben:
+CR, LF, „4000000A: C8“
