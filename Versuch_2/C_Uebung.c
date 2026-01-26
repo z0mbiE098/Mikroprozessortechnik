@@ -29,7 +29,6 @@
 // Masken und Konstanten
 #define SEGMENT7_MASK 0x01FC0000        // 7 Segment Display P0.18-P0.24
 #define LED_MASK 0xFF0000              // LEDS an P1.16 - P1.23
-#define SWITCH_MASK 0x30000            // Schalter an P0.16 und P0.17 (S1,S2)
 #define BCD_MAX 9                      // Maximalwert der BCD-Anzeige
 
 //static volatile unsigned int led_pos = 0;      // Aktuelle Position Lauflicht (0..7)
