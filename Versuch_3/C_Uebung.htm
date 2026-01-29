@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\C_Uebung.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\C_Uebung.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Thu Jan 29 04:00:15 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Thu Jan 29 05:12:21 2026
 <BR><P>
 <H3>Maximum Stack Usage =        112 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -317,14 +317,14 @@ Local Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup.o(RESET)
 </UL>
-<P><STRONG><a name="[1a]"></a>hex_nibble</STRONG> (ARM, 84 bytes, Stack size 0 bytes, c_uebung.o(.text))
+<P><STRONG><a name="[1a]"></a>hexToInt</STRONG> (ARM, 84 bytes, Stack size 0 bytes, c_uebung.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[19]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_hex_n
 </UL>
 
 <P><STRONG><a name="[19]"></a>parse_hex_n</STRONG> (ARM, 88 bytes, Stack size 32 bytes, c_uebung.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = parse_hex_n
 </UL>
-<BR>[Calls]<UL><LI><a href="#[1a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hex_nibble
+<BR>[Calls]<UL><LI><a href="#[1a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hexToInt
 </UL>
 <BR>[Called By]<UL><LI><a href="#[a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>

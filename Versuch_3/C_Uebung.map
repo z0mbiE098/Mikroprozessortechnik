@@ -234,7 +234,7 @@ Image Symbol Table
     .ARM.Collect$$rtexit$$00000004           0x000001ec   Section        8  rtexit2.o(.ARM.Collect$$rtexit$$00000004)
     .text                                    0x000001f4   Section       32  startup.o(.text)
     .text                                    0x00000214   Section        0  c_uebung.o(.text)
-    hex_nibble                               0x00000214   ARM Code      84  c_uebung.o(.text)
+    hexToInt                                 0x00000214   ARM Code      84  c_uebung.o(.text)
     parse_hex_n                              0x00000268   ARM Code      88  c_uebung.o(.text)
     read_line                                0x00000328   ARM Code     152  c_uebung.o(.text)
     .text                                    0x00000744   Section      100  rt_memcpy_w.o(.text)

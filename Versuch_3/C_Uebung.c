@@ -37,7 +37,7 @@ void print_hex8(unsigned char val);
 
 /* ---------- Helfer: line-based input + hex parsing ---------- */
 
-static int hex_nibble(char c) {
+static int hexToInt(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'A' && c <= 'F') return c - 'A' + 10;
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -49,7 +49,7 @@ static int parse_hex_n(const char *s, int n, unsigned long *out) {
     int i, h;
 
     for (i = 0; i < n; i++) {
-        h = hex_nibble(s[i]);
+        h = hexToInt(s[i]);
         if (h < 0) return 0;
         v = (v << 4) | (unsigned long)h;
     }
